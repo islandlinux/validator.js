@@ -6,6 +6,7 @@
   "files": [
     "index.js",
     "lib",
+    "src",
     "README.md",
     "LICENCE",
     "validator.js",
