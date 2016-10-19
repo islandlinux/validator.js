@@ -1,4 +1,4 @@
-const version = '5.2.0';
+const version = '6.1.0';
 
 import toDate from './lib/toDate';
 import toFloat from './lib/toFloat';
@@ -37,8 +37,10 @@ import isDivisibleBy from './lib/isDivisibleBy';
 
 import isHexColor from './lib/isHexColor';
 
+import isMD5 from './lib/isMD5';
+
 import isJSON from './lib/isJSON';
-import isNull from './lib/isNull';
+import isEmpty from './lib/isEmpty';
 
 import isLength from './lib/isLength';
 import isByteLength from './lib/isByteLength';
@@ -56,6 +58,7 @@ import isCreditCard from './lib/isCreditCard';
 
 import isISIN from './lib/isISIN';
 import isISBN from './lib/isISBN';
+import isISSN from './lib/isISSN';
 
 import isMobilePhone from './lib/isMobilePhone';
 
@@ -93,14 +96,15 @@ const validator = {
   isMultibyte, isSurrogatePair,
   isInt, isFloat, isDecimal, isHexadecimal, isDivisibleBy,
   isHexColor,
+  isMD5,
   isJSON,
-  isNull,
+  isEmpty,
   isLength, isByteLength,
   isUUID, isMongoId,
   isDate, isAfter, isBefore,
   isIn,
   isCreditCard,
-  isISIN, isISBN,
+  isISIN, isISBN, isISSN,
   isMobilePhone,
   isCurrency,
   isISO8601,
