@@ -1,6 +1,37 @@
 #### HEAD
+
+- New locales
+  ([#647](https://github.com/chriso/validator.js/pull/647))
+
+#### 7.0.0
+
+- Remove `isDate()`
+
+#### 6.3.0
+
+- Allow values like `-.01` in `isFloat()`
+  ([#618](https://github.com/chriso/validator.js/issues/618))
+- New locales
+  ([#616](https://github.com/chriso/validator.js/pull/616),
+   [#622](https://github.com/chriso/validator.js/pull/622),
+   [#627](https://github.com/chriso/validator.js/pull/627),
+   [#630](https://github.com/chriso/validator.js/pull/630))
+
+#### 6.2.1
+
+- Disallow `<` and `>` in URLs
+  ([#613](https://github.com/chriso/validator.js/issues/613))
+- New locales
+  ([#610](https://github.com/chriso/validator.js/pull/610))
+
+#### 6.2.0
+
+- Added an option to require an email display name
+  ([#607](https://github.com/chriso/validator.js/pull/607))
 - Added support for `lt` and `gt` to `isInt()`
   ([#588](https://github.com/chriso/validator.js/pull/588))
+- New locales
+  ([#601](https://github.com/chriso/validator.js/pull/601))
 
 #### 6.1.0
 

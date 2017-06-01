@@ -277,6 +277,7 @@
 
       var default_email_options = {
         allow_display_name: false,
+        require_display_name: false,
         allow_utf8_local_part: true,
         require_tld: true
       };
@@ -295,10 +296,12 @@
         assertString(str);
         options = merge(options, default_email_options);
 
-        if (options.allow_display_name) {
+        if (options.require_display_name || options.allow_display_name) {
           var display_email = str.match(displayName);
           if (display_email) {
             str = display_email[1];
+          } else if (options.require_display_name) {
+            return false;
           }
         }
 
@@ -433,7 +436,7 @@
 
       function isURL(url, options) {
         assertString(url);
-        if (!url || url.length >= 2083 || /\s/.test(url)) {
+        if (!url || url.length >= 2083 || /[\s<>]/.test(url)) {
           return false;
         }
         if (url.indexOf('mailto:') === 0) {
@@ -536,6 +539,7 @@
       var alpha = {
         'en-US': /^[A-Z]+$/i,
         'cs-CZ': /^[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]+$/i,
+        'da-DK': /^[A-ZÆØÅ]+$/i,
         'de-DE': /^[A-ZÄÖÜß]+$/i,
         'es-ES': /^[A-ZÁÉÍÑÓÚÜ]+$/i,
         'fr-FR': /^[A-ZÀÂÆÇÉÈÊËÏÎÔŒÙÛÜŸ]+$/i,
@@ -547,13 +551,14 @@
         'sr-RS@latin': /^[A-ZČĆŽŠĐ]+$/i,
         'sr-RS': /^[А-ЯЂЈЉЊЋЏ]+$/i,
         'tr-TR': /^[A-ZÇĞİıÖŞÜ]+$/i,
-        'uk-UA': /^[А-ЯЄIЇҐ]+$/i,
+        'uk-UA': /^[А-ЩЬЮЯЄIЇҐ]+$/i,
         ar: /^[ءآأؤإئابةتثجحخدذرزسشصضطظعغفقكلمنهوىيًٌٍَُِّْٰ]+$/
       };
 
       var alphanumeric = {
         'en-US': /^[0-9A-Z]+$/i,
         'cs-CZ': /^[0-9A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]+$/i,
+        'da-DK': /^[0-9A-ZÆØÅ]$/i,
         'de-DE': /^[0-9A-ZÄÖÜß]+$/i,
         'es-ES': /^[0-9A-ZÁÉÍÑÓÚÜ]+$/i,
         'fr-FR': /^[0-9A-ZÀÂÆÇÉÈÊËÏÎÔŒÙÛÜŸ]+$/i,
@@ -565,7 +570,7 @@
         'sr-RS@latin': /^[0-9A-ZČĆŽŠĐ]+$/i,
         'sr-RS': /^[0-9А-ЯЂЈЉЊЋЏ]+$/i,
         'tr-TR': /^[0-9A-ZÇĞİıÖŞÜ]+$/i,
-        'uk-UA': /^[0-9А-ЯЄIЇҐ]+$/i,
+        'uk-UA': /^[0-9А-ЩЬЮЯЄIЇҐ]+$/i,
         ar: /^[٠١٢٣٤٥٦٧٨٩0-9ءآأؤإئابةتثجحخدذرزسشصضطظعغفقكلمنهوىيًٌٍَُِّْٰ]+$/
       };
 
@@ -690,7 +695,7 @@
         return regex.test(str) && minCheckPassed && maxCheckPassed && ltCheckPassed && gtCheckPassed;
       }
 
-      var float = /^(?:[-+]?(?:[0-9]+))?(?:\.[0-9]*)?(?:[eE][\+\-]?(?:[0-9]+))?$/;
+      var float = /^(?:[-+])?(?:[0-9]+)?(?:\.[0-9]*)?(?:[eE][\+\-]?(?:[0-9]+))?$/;
 
       function isFloat(str, options) {
         assertString(str);
@@ -784,101 +789,6 @@
       function isMongoId(str) {
         assertString(str);
         return isHexadecimal(str) && str.length === 24;
-      }
-
-      /* eslint-disable max-len */
-      // from http://goo.gl/0ejHHW
-      var iso8601 = /^([\+-]?\d{4}(?!\d{2}\b))((-?)((0[1-9]|1[0-2])(\3([12]\d|0[1-9]|3[01]))?|W([0-4]\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\d|[12]\d{2}|3([0-5]\d|6[1-6])))([T\s]((([01]\d|2[0-3])((:?)[0-5]\d)?|24:?00)([\.,]\d+(?!:))?)?(\17[0-5]\d([\.,]\d+)?)?([zZ]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?)?)?$/;
-      /* eslint-enable max-len */
-
-      function isISO8601 (str) {
-        assertString(str);
-        return iso8601.test(str);
-      }
-
-      function getTimezoneOffset(str) {
-        var iso8601Parts = str.match(iso8601);
-        var timezone = void 0,
-            sign = void 0,
-            hours = void 0,
-            minutes = void 0;
-        if (!iso8601Parts) {
-          str = str.toLowerCase();
-          timezone = str.match(/(?:\s|gmt\s*)(-|\+)(\d{1,4})(\s|$)/);
-          if (!timezone) {
-            return str.indexOf('gmt') !== -1 ? 0 : null;
-          }
-          sign = timezone[1];
-          var offset = timezone[2];
-          if (offset.length === 3) {
-            offset = '0' + offset;
-          }
-          if (offset.length <= 2) {
-            hours = 0;
-            minutes = parseInt(offset, 10);
-          } else {
-            hours = parseInt(offset.slice(0, 2), 10);
-            minutes = parseInt(offset.slice(2, 4), 10);
-          }
-        } else {
-          timezone = iso8601Parts[21];
-          if (!timezone) {
-            // if no hour/minute was provided, the date is GMT
-            return !iso8601Parts[12] ? 0 : null;
-          }
-          if (timezone === 'z' || timezone === 'Z') {
-            return 0;
-          }
-          sign = iso8601Parts[22];
-          if (timezone.indexOf(':') !== -1) {
-            hours = parseInt(iso8601Parts[23], 10);
-            minutes = parseInt(iso8601Parts[24], 10);
-          } else {
-            hours = 0;
-            minutes = parseInt(iso8601Parts[23], 10);
-          }
-        }
-        return (hours * 60 + minutes) * (sign === '-' ? 1 : -1);
-      }
-
-      function isDate(str) {
-        assertString(str);
-        var normalizedDate = new Date(Date.parse(str));
-        if (isNaN(normalizedDate)) {
-          return false;
-        }
-
-        // normalizedDate is in the user's timezone. Apply the input
-        // timezone offset to the date so that the year and day match
-        // the input
-        var timezoneOffset = getTimezoneOffset(str);
-        if (timezoneOffset !== null) {
-          var timezoneDifference = normalizedDate.getTimezoneOffset() - timezoneOffset;
-          normalizedDate = new Date(normalizedDate.getTime() + 60000 * timezoneDifference);
-        }
-
-        var day = String(normalizedDate.getDate());
-        var dayOrYear = void 0,
-            dayOrYearMatches = void 0,
-            year = void 0;
-        // check for valid double digits that could be late days
-        // check for all matches since a string like '12/23' is a valid date
-        // ignore everything with nearby colons
-        dayOrYearMatches = str.match(/(^|[^:\d])[23]\d([^T:\d]|$)/g);
-        if (!dayOrYearMatches) {
-          return true;
-        }
-        dayOrYear = dayOrYearMatches.map(function (digitString) {
-          return digitString.match(/\d+/g)[0];
-        }).join('/');
-
-        year = String(normalizedDate.getFullYear()).slice(-2);
-        if (dayOrYear === day || dayOrYear === year) {
-          return true;
-        } else if (dayOrYear === '' + day / year || dayOrYear === '' + year / day) {
-          return true;
-        }
-        return false;
       }
 
       function isAfter(str) {
@@ -1088,13 +998,16 @@
         'en-GB': /^(\+?44|0)7\d{9}$/,
         'en-HK': /^(\+?852\-?)?[569]\d{3}\-?\d{4}$/,
         'en-IN': /^(\+?91|0)?[789]\d{9}$/,
+        'en-NG': /^(\+?234|0)?[789]\d{9}$/,
         'en-NZ': /^(\+?64|0)2\d{7,9}$/,
         'en-ZA': /^(\+?27|0)\d{9}$/,
         'en-ZM': /^(\+?26)?09[567]\d{7}$/,
         'es-ES': /^(\+?34)?(6\d{1}|7[1234])\d{7}$/,
         'fi-FI': /^(\+?358|0)\s?(4(0|1|2|4|5)?|50)\s?(\d\s?){4,8}\d$/,
         'fr-FR': /^(\+?33|0)[67]\d{8}$/,
+        'he-IL': /^(\+972|0)([23489]|5[0248]|77)[1-9]\d{6}/,
         'hu-HU': /^(\+?36)(20|30|70)\d{7}$/,
+        'id-ID': /^(\+?62|0[1-9])[\s|\d]+$/,
         'it-IT': /^(\+?39)?\s?3\d{2} ?\d{6,7}$/,
         'ja-JP': /^(\+?81|0)\d{1,4}[ \-]?\d{1,4}[ \-]?\d{4}$/,
         'ms-MY': /^(\+?6?01){1}(([145]{1}(\-|\s)?\d{7,8})|([236789]{1}(\s|\-)?\d{7}))$/,
@@ -1104,6 +1017,8 @@
         'pl-PL': /^(\+?48)? ?[5-8]\d ?\d{3} ?\d{2} ?\d{2}$/,
         'pt-BR': /^(\+?55|0)\-?[1-9]{2}\-?[2-9]{1}\d{3,4}\-?\d{4}$/,
         'pt-PT': /^(\+?351)?9[1236]\d{7}$/,
+        'ro-RO': /^(\+?4?0)\s?7\d{2}(\/|\s|\.|\-)?\d{3}(\s|\.|\-)?\d{3}$/,
+        'en-PK': /^((\+92)|(0092))-{0,1}\d{3}-{0,1}\d{7}$|^\d{11}$|^\d{4}-\d{7}$/,
         'ru-RU': /^(\+?7|8)?9\d{9}$/,
         'sr-RS': /^(\+3816|06)[- \d]{5,9}$/,
         'tr-TR': /^(\+?90|0)?5\d{9}$/,
@@ -1116,6 +1031,7 @@
       // aliases
       phones['en-CA'] = phones['en-US'];
       phones['fr-BE'] = phones['nl-BE'];
+      phones['zh-HK'] = phones['en-HK'];
 
       function isMobilePhone(str, locale) {
         assertString(str);
@@ -1194,6 +1110,16 @@
         assertString(str);
         options = merge(options, default_currency_options);
         return currencyRegex(options).test(str);
+      }
+
+      /* eslint-disable max-len */
+      // from http://goo.gl/0ejHHW
+      var iso8601 = /^([\+-]?\d{4}(?!\d{2}\b))((-?)((0[1-9]|1[0-2])(\3([12]\d|0[1-9]|3[01]))?|W([0-4]\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\d|[12]\d{2}|3([0-5]\d|6[1-6])))([T\s]((([01]\d|2[0-3])((:?)[0-5]\d)?|24:?00)([\.,]\d+(?!:))?)?(\17[0-5]\d([\.,]\d+)?)?([zZ]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?)?)?$/;
+      /* eslint-enable max-len */
+
+      function isISO8601 (str) {
+        assertString(str);
+        return iso8601.test(str);
       }
 
       var notBase64 = /[^A-Z0-9+\/=]/i;
@@ -1386,46 +1312,74 @@
           if (options.all_lowercase || options.yahoo_lowercase) {
             parts[0] = parts[0].toLowerCase();
           }
-        } else {
+        } else if (options.all_lowercase) {
           // Any other address
-          if (options.all_lowercase) {
-            parts[0] = parts[0].toLowerCase();
-          }
+          parts[0] = parts[0].toLowerCase();
         }
         return parts.join('@');
       }
 
-      var version = '6.1.0';
+      var version = '7.0.0';
 
       var validator = {
         version: version,
         toDate: toDate,
-        toFloat: toFloat, toInt: toInt,
+        toFloat: toFloat,
+        toInt: toInt,
         toBoolean: toBoolean,
-        equals: equals, contains: contains, matches: matches,
-        isEmail: isEmail, isURL: isURL, isMACAddress: isMACAddress, isIP: isIP, isFQDN: isFDQN,
+        equals: equals,
+        contains: contains,
+        matches: matches,
+        isEmail: isEmail,
+        isURL: isURL,
+        isMACAddress: isMACAddress,
+        isIP: isIP,
+        isFQDN: isFDQN,
         isBoolean: isBoolean,
-        isAlpha: isAlpha, isAlphanumeric: isAlphanumeric, isNumeric: isNumeric, isLowercase: isLowercase, isUppercase: isUppercase,
-        isAscii: isAscii, isFullWidth: isFullWidth, isHalfWidth: isHalfWidth, isVariableWidth: isVariableWidth,
-        isMultibyte: isMultibyte, isSurrogatePair: isSurrogatePair,
-        isInt: isInt, isFloat: isFloat, isDecimal: isDecimal, isHexadecimal: isHexadecimal, isDivisibleBy: isDivisibleBy,
+        isAlpha: isAlpha,
+        isAlphanumeric: isAlphanumeric,
+        isNumeric: isNumeric,
+        isLowercase: isLowercase,
+        isUppercase: isUppercase,
+        isAscii: isAscii,
+        isFullWidth: isFullWidth,
+        isHalfWidth: isHalfWidth,
+        isVariableWidth: isVariableWidth,
+        isMultibyte: isMultibyte,
+        isSurrogatePair: isSurrogatePair,
+        isInt: isInt,
+        isFloat: isFloat,
+        isDecimal: isDecimal,
+        isHexadecimal: isHexadecimal,
+        isDivisibleBy: isDivisibleBy,
         isHexColor: isHexColor,
         isMD5: isMD5,
         isJSON: isJSON,
         isEmpty: isEmpty,
-        isLength: isLength, isByteLength: isByteLength,
-        isUUID: isUUID, isMongoId: isMongoId,
-        isDate: isDate, isAfter: isAfter, isBefore: isBefore,
+        isLength: isLength,
+        isByteLength: isByteLength,
+        isUUID: isUUID,
+        isMongoId: isMongoId,
+        isAfter: isAfter,
+        isBefore: isBefore,
         isIn: isIn,
         isCreditCard: isCreditCard,
-        isISIN: isISIN, isISBN: isISBN, isISSN: isISSN,
+        isISIN: isISIN,
+        isISBN: isISBN,
+        isISSN: isISSN,
         isMobilePhone: isMobilePhone,
         isCurrency: isCurrency,
         isISO8601: isISO8601,
-        isBase64: isBase64, isDataURI: isDataURI,
-        ltrim: ltrim, rtrim: rtrim, trim: trim,
-        escape: escape, unescape: unescape, stripLow: stripLow,
-        whitelist: whitelist, blacklist: blacklist,
+        isBase64: isBase64,
+        isDataURI: isDataURI,
+        ltrim: ltrim,
+        rtrim: rtrim,
+        trim: trim,
+        escape: escape,
+        unescape: unescape,
+        stripLow: stripLow,
+        whitelist: whitelist,
+        blacklist: blacklist,
         isWhitelisted: isWhitelisted,
         normalizeEmail: normalizeEmail,
         toString: toString

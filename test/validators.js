@@ -13,7 +13,7 @@ function test(options) {
   if (options.valid) {
     options.valid.forEach(function (valid) {
       args[0] = valid;
-      if (validator[options.validator].apply(validator, args) !== true) {
+      if (validator[options.validator](...args) !== true) {
         var warning = format('validator.%s(%s) failed but should have passed',
                     options.validator, args.join(', '));
         throw new Error(warning);
@@ -23,7 +23,7 @@ function test(options) {
   if (options.invalid) {
     options.invalid.forEach(function (invalid) {
       args[0] = invalid;
-      if (validator[options.validator].apply(validator, args) !== false) {
+      if (validator[options.validator](...args) !== false) {
         var warning = format('validator.%s(%s) passed but should have failed',
                     options.validator, args.join(', '));
         throw new Error(warning);
@@ -151,6 +151,53 @@ describe('Validators', function () {
     });
   });
 
+  it('should validate email addresses with required display names', function () {
+    test({
+      validator: 'isEmail',
+      args: [{ require_display_name: true }],
+      valid: [
+        'Some Name <foo@bar.com>',
+        'Some Name <x@x.au>',
+        'Some Name <foo@bar.com.au>',
+        'Some Name <foo+bar@bar.com>',
+        'Some Name <hans.m端ller@test.com>',
+        'Some Name <hans@m端ller.com>',
+        'Some Name <test|123@m端ller.com>',
+        'Some Name <test+ext@gmail.com>',
+        'Some Name <some.name.midd.leNa.me.+extension@GoogleMail.com>',
+        'Some Middle Name <some.name.midd.leNa.me.+extension@GoogleMail.com>',
+        'Name <some.name.midd.leNa.me.+extension@GoogleMail.com>',
+        'Name<some.name.midd.leNa.me.+extension@GoogleMail.com>',
+      ],
+      invalid: [
+        'some.name.midd.leNa.me.+extension@GoogleMail.com',
+        'foo@bar.com',
+        'x@x.au',
+        'foo@bar.com.au',
+        'foo+bar@bar.com',
+        'hans.m端ller@test.com',
+        'hans@m端ller.com',
+        'test|123@m端ller.com',
+        'test+ext@gmail.com',
+        'invalidemail@',
+        'invalid.com',
+        '@invalid.com',
+        'foo@bar.com.',
+        'foo@bar.co.uk.',
+        'Some Name <invalidemail@>',
+        'Some Name <invalid.com>',
+        'Some Name <@invalid.com>',
+        'Some Name <foo@bar.com.>',
+        'Some Name <foo@bar.co.uk.>',
+        'Some Name foo@bar.co.uk.>',
+        'Some Name <foo@bar.co.uk.',
+        'Some Name < foo@bar.co.uk >',
+        'Name foo@bar.co.uk',
+      ],
+    });
+  });
+
+
   it('should validate URLs', function () {
     test({
       validator: 'isURL',
@@ -229,6 +276,7 @@ describe('Validators', function () {
         'http://localhost:61500this is an invalid url!!!!',
         '////foobar.com',
         'http:////foobar.com',
+        'https://example.com/foo/<script>alert(\'XSS\')</script>/',
       ],
     });
   });
@@ -776,12 +824,12 @@ describe('Validators', function () {
     });
   });
 
-  it('should validate ukranian alpha strings', function () {
+  it('should validate urkrainian alpha strings', function () {
     test({
       validator: 'isAlpha',
       args: ['uk-UA'],
       valid: [
-        'ЯЄIЇҐ',
+        'АБВГҐДЕЄЖЗИIЇЙКЛМНОПРСТУФХЦШЩЬЮЯ',
       ],
       invalid: [
         '0AİıÖöÇçŞşĞğÜüZ1',
@@ -791,6 +839,7 @@ describe('Validators', function () {
         '',
         'ÄBC',
         'Heiß',
+        'ЫыЪъЭэ',
       ],
     });
   });
@@ -980,12 +1029,13 @@ describe('Validators', function () {
       validator: 'isAlphanumeric',
       args: ['uk-UA'],
       valid: [
-        'ЯЄIЇҐ123',
+        'АБВГҐДЕЄЖЗИIЇЙКЛМНОПРСТУФХЦШЩЬЮЯ123',
       ],
       invalid: [
         'éeoc ',
         'foo!!',
         'ÄBC',
+        'ЫыЪъЭэ',
       ],
     });
   });
@@ -1217,11 +1267,12 @@ describe('Validators', function () {
         '+0.123',
         '0.123',
         '.0',
+        '-.123',
+        '+.123',
         '01.123',
         '-0.22250738585072011e-307',
       ],
       invalid: [
-        '-.123',
         '  ',
         '',
         '.',
@@ -1383,17 +1434,33 @@ describe('Validators', function () {
   });
 
   it('should validate strings contain another string', function () {
-    test({ validator: 'contains', args: ['foo'], valid: ['foo', 'foobar', 'bazfoo'],
-            invalid: ['bar', 'fobar'] });
+    test({
+      validator: 'contains',
+      args: ['foo'],
+      valid: ['foo', 'foobar', 'bazfoo'],
+      invalid: ['bar', 'fobar'],
+    });
   });
 
   it('should validate strings against a pattern', function () {
-    test({ validator: 'matches', args: [/abc/], valid: ['abc', 'abcdef', '123abc'],
-            invalid: ['acb', 'Abc'] });
-    test({ validator: 'matches', args: ['abc'], valid: ['abc', 'abcdef', '123abc'],
-            invalid: ['acb', 'Abc'] });
-    test({ validator: 'matches', args: ['abc', 'i'], valid: ['abc', 'abcdef', '123abc', 'AbC'],
-            invalid: ['acb'] });
+    test({
+      validator: 'matches',
+      args: [/abc/],
+      valid: ['abc', 'abcdef', '123abc'],
+      invalid: ['acb', 'Abc'],
+    });
+    test({
+      validator: 'matches',
+      args: ['abc'],
+      valid: ['abc', 'abcdef', '123abc'],
+      invalid: ['acb', 'Abc'],
+    });
+    test({
+      validator: 'matches',
+      args: ['abc', 'i'],
+      valid: ['abc', 'abcdef', '123abc', 'AbC'],
+      invalid: ['acb'],
+    });
   });
 
   it('should validate strings by length (deprecated api)', function () {
@@ -1576,12 +1643,24 @@ describe('Validators', function () {
   });
 
   it('should validate a string that is in another string or array', function () {
-    test({ validator: 'isIn', args: ['foobar'], valid: ['foo', 'bar', 'foobar', ''],
-            invalid: ['foobarbaz', 'barfoo'] });
-    test({ validator: 'isIn', args: [['foo', 'bar']], valid: ['foo', 'bar'],
-            invalid: ['foobar', 'barfoo', ''] });
-    test({ validator: 'isIn', args: [['1', '2', '3']], valid: ['1', '2', '3'],
-            invalid: ['4', ''] });
+    test({
+      validator: 'isIn',
+      args: ['foobar'],
+      valid: ['foo', 'bar', 'foobar', ''],
+      invalid: ['foobarbaz', 'barfoo'],
+    });
+    test({
+      validator: 'isIn',
+      args: [['foo', 'bar']],
+      valid: ['foo', 'bar'],
+      invalid: ['foobar', 'barfoo', ''],
+    });
+    test({
+      validator: 'isIn',
+      args: [['1', '2', '3']],
+      valid: ['1', '2', '3'],
+      invalid: ['4', ''],
+    });
     test({ validator: 'isIn', invalid: ['foo', ''] });
   });
 
@@ -1600,141 +1679,44 @@ describe('Validators', function () {
     });
   });
 
-  it('should validate dates', function () {
+  it('should validate dates against a start date', function () {
     test({
-      validator: 'isDate',
-      valid: [
-        '2011-08-04',
-        '2011-09-30',
-        '04. 08. 2011.',
-        '08/04/2011',
-        '08/31/2011',
-        '2011.08.04',
-        '2/29/24',
-        '2-29-24',
-        '4. 8. 2011. GMT',
-        '2. 28. 2011. GMT',
-        '2. 29. 2008. GMT',
-        '2011-08-04 12:00',
-        '2/22/23',
-        '2-23-22',
-        '12',
-        '11/2/23 12:24',
-        new Date().toString(),
-        'Mon Aug 17 2015 00:24:56 GMT-0500 (CDT)',
-        '2/22/23 23:24:26',
-          // valid ISO 8601 dates below
-        '2009-12T12:34',
-        '2009',
-        '2009-05-19',
-        '2009-05-19',
-        '2009-05',
-        '2009-001',
-        '2009-05-19',
-        '2009-05-19 00:00',
-        '2009-05-19 14:31',
-        '2009-05-19 14:39:22',
-        '2009-05-19T14:39Z',
-        '2009-05-19 14:39:22-06:00',
-        '2009-05-19 14:39:22+0600',
-        '2009-05-19 14:39:22-01',
-        '2015-10-20T00:53:09+08:00',
-        '2015-10-20T00:53:09+09:00',
-        '2015-10-20T00:53:09+10:00',
-        '2015-10-20T00:53:09+11:00',
-        '2015-10-20T00:53:09+12:00',
-        '2007-04-06T00:00',
-        '2010-02-18T16:23:48.5',
-        '2016-02-20T16:23:48.5',
-        '200905',
-        '2009-',
-        '2009-05-19 14:',
-        '200912-01',
-        // RFC 2882 tests below borrowed from the timerep package in Hackage:
-        // https://hackage.haskell.org/package/timerep-1.0.3/docs/src/Data-Time-RFC2822.html
-        'Fri, 21 Nov 1997 09:55:06 -0600',
-        'Tue, 15 Nov 1994 12:45:26 GMT',
-        'Tue, 1 Jul 2003 10:52:37 +0200',
-        'Thu, 13 Feb 1969 23:32:54 -0330',
-        'Mon, 24 Nov 1997 14:22:01 -0800',
-        'Mon Sep 28 1964 00:05:49 GMT+1100 (AEDST)',
-        'Mon Sep 28 1964 00:05:49 +1100 (AEDST)',
-        'Mon Sep 28 1964 00:05:49 +1100',
-        'Mon Sep 28 1964 00:05:49 \nGMT\n+1100\n',
-        'Mon Sep 28 1964 00:05:49 \nGMT\n+1100\n(AEDST)',
-        'Thu,          13\n     Feb\n  1969\n        23:32\n     -0330',
-        'Thu,          13\n     Feb\n  1969\n        23:32\n     -0330 (Newfoundland Time)',
-        '24 Nov 1997 14:22:01 -0800',
-        // slight variations of the above with end-of-month
-        'Thu,          29\n     Feb\n  1968\n        13:32\n     -0330',
-        'Fri, 30 Nov 1997 09:55:06 -0600',
-        // more RFC 2882 tests borrowed from libgit2:
-        // https://github.com/libgit2/libgit2/blob/master/tests/date/rfc2822.c,
-        'Wed, 10 Apr 2014 08:21:03 +0000',
-        'Wed, 9 Apr 2014 10:21:03 +0200',
-        'Wed, 9 Apr 2014 06:21:03 -0200',
-        'Wed, 9 Apr 2014 08:21:03 +0000',
-        '2016-01-20 07:11',
-      ],
-      invalid: [
-        'foo',
-        '2011-foo-04',
-        '2011-09-31',
-        '2. 29. 1987. GMT',
-        '2. 29. 2011. GMT',
-        '2/29/25',
-        '2-29-25',
-        'GMT',
-        // invalid ISO 8601 dates below
-        '2009367',
-        '2007-04-05T24:50',
-        '2009-000',
-        '2009-M511',
-        '2009M511',
-        '2009-05-19T14a39r',
-        '2009-05-19T14:3924',
-        '2009-0519',
-        '2009-05-1914:39',
-        '2009-05-19r14:39',
-        '2009-05-19 14a39a22',
-        '2009-05-19 14:39:22+06a00',
-        '2009-05-19 146922.500',
-        '2010-02-18T16.5:23.35:48',
-        '2010-02-18T16:23.35:48',
-        '2010-02-18T16:23.35:48.45',
-        '2009-05-19 14.5.44',
-        '2010-02-18T16:23.33.600',
-        '2010-02-18T16,25:23:48,444',
-        '2009-02-30 14:',
-        '200912-32',
-        // hackage RFC2822 variants with invalid end-of-month
-        'Thu,          29\n     Feb\n  1969\n        13:32\n     -0330',
-        'Fri, 31 Nov 1997 09:55:06 -0600',
-      ],
+      validator: 'isAfter',
+      args: ['2011-08-03'],
+      valid: ['2011-08-04', new Date(2011, 8, 10).toString()],
+      invalid: ['2010-07-02', '2011-08-03', new Date(0).toString(), 'foo'],
+    });
+    test({
+      validator: 'isAfter',
+      valid: ['2100-08-04', new Date(Date.now() + 86400000).toString()],
+      invalid: ['2010-07-02', new Date(0).toString()],
+    });
+    test({
+      validator: 'isAfter',
+      args: ['2011-08-03'],
+      valid: ['2015-09-17'],
+      invalid: ['invalid date'],
+    });
+    test({
+      validator: 'isAfter',
+      args: ['invalid date'],
+      invalid: ['invalid date', '2015-09-17'],
     });
   });
 
-  it('should validate dates against a start date', function () {
-    test({ validator: 'isAfter', args: ['2011-08-03'],
-            valid: ['2011-08-04', new Date(2011, 8, 10).toString()],
-            invalid: ['2010-07-02', '2011-08-03', new Date(0).toString(), 'foo'] });
-    test({ validator: 'isAfter',
-            valid: ['2100-08-04', new Date(Date.now() + 86400000).toString()],
-            invalid: ['2010-07-02', new Date(0).toString()] });
-    test({ validator: 'isAfter', args: ['2011-08-03'],
-            valid: ['2015-09-17'],
-            invalid: ['invalid date'] });
-    test({ validator: 'isAfter', args: ['invalid date'],
-            invalid: ['invalid date', '2015-09-17'] });
-  });
-
   it('should validate dates against an end date', function () {
-    test({ validator: 'isBefore', args: ['08/04/2011'],
-            valid: ['2010-07-02', '2010-08-04', new Date(0).toString()],
-            invalid: ['08/04/2011', new Date(2011, 9, 10).toString()] });
-    test({ validator: 'isBefore', args: [new Date(2011, 7, 4).toString()],
-            valid: ['2010-07-02', '2010-08-04', new Date(0).toString()],
-            invalid: ['08/04/2011', new Date(2011, 9, 10).toString()] });
+    test({
+      validator: 'isBefore',
+      args: ['08/04/2011'],
+      valid: ['2010-07-02', '2010-08-04', new Date(0).toString()],
+      invalid: ['08/04/2011', new Date(2011, 9, 10).toString()],
+    });
+    test({
+      validator: 'isBefore',
+      args: [new Date(2011, 7, 4).toString()],
+      valid: ['2010-07-02', '2010-08-04', new Date(0).toString()],
+      invalid: ['08/04/2011', new Date(2011, 9, 10).toString()],
+    });
     test({
       validator: 'isBefore',
       valid: [
@@ -1744,11 +1726,17 @@ describe('Validators', function () {
       ],
       invalid: ['2100-07-02', new Date(2017, 10, 10).toString()],
     });
-    test({ validator: 'isBefore', args: ['2011-08-03'],
-            valid: ['1999-12-31'],
-            invalid: ['invalid date'] });
-    test({ validator: 'isBefore', args: ['invalid date'],
-            invalid: ['invalid date', '1999-12-31'] });
+    test({
+      validator: 'isBefore',
+      args: ['2011-08-03'],
+      valid: ['1999-12-31'],
+      invalid: ['invalid date'],
+    });
+    test({
+      validator: 'isBefore',
+      args: ['invalid date'],
+      invalid: ['invalid date', '1999-12-31'],
+    });
   });
 
   it('should validate that integer strings are divisible by a number', function () {
@@ -2786,6 +2774,68 @@ describe('Validators', function () {
         '320212345678',
       ],
       args: ['nl-BE'],
+    });
+
+    test({
+      validator: 'isMobilePhone',
+      valid: [
+        '+40740123456',
+        '+40 740123456',
+        '+40740 123 456',
+        '+40740.123.456',
+        '+40740-123-456',
+        '40740123456',
+        '40 740123456',
+        '40740 123 456',
+        '40740.123.456',
+        '40740-123-456',
+        '0740123456',
+        '0740/123456',
+        '0740 123 456',
+        '0740.123.456',
+        '0740-123-456',
+      ],
+      invalid: [
+        '',
+        'Vml2YW11cyBmZXJtZtesting123',
+        '123456',
+        '740123456',
+        '+40640123456',
+        '+40210123456',
+      ],
+      args: ['ro-RO'],
+    });
+
+    test({
+      validator: 'isMobilePhone',
+      valid: [
+        '0217123456',
+        '0811 778 998',
+        '089931236181900',
+        '622178878890',
+        '62811 778 998',
+        '62811778998',
+        '6289931236181900',
+        '6221 740123456',
+        '62899 740123456',
+        '62899 7401 2346',
+        '0341 8123456',
+        '0778 89800910',
+        '0741 123456',
+        '+6221740123456',
+        '+62811 778 998',
+        '+62811778998',
+      ],
+      invalid: [
+        '+65740 123 456',
+        '',
+        'ASDFGJKLmZXJtZtesting123',
+        '123456',
+        '740123456',
+        '+65640123456',
+        '+64210123456',
+      ],
+      args: ['id-ID'],
     });
   });
 

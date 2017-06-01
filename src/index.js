@@ -1,5 +1,3 @@
-const version = '6.1.0';
-
 import toDate from './lib/toDate';
 import toFloat from './lib/toFloat';
 import toInt from './lib/toInt';
@@ -48,7 +46,6 @@ import isByteLength from './lib/isByteLength';
 import isUUID from './lib/isUUID';
 import isMongoId from './lib/isMongoId';
 
-import isDate from './lib/isDate';
 import isAfter from './lib/isAfter';
 import isBefore from './lib/isBefore';
 
@@ -83,35 +80,67 @@ import normalizeEmail from './lib/normalizeEmail';
 
 import toString from './lib/util/toString';
 
+const version = '7.0.0';
+
 const validator = {
   version,
   toDate,
-  toFloat, toInt,
+  toFloat,
+  toInt,
   toBoolean,
-  equals, contains, matches,
-  isEmail, isURL, isMACAddress, isIP, isFQDN,
+  equals,
+  contains,
+  matches,
+  isEmail,
+  isURL,
+  isMACAddress,
+  isIP,
+  isFQDN,
   isBoolean,
-  isAlpha, isAlphanumeric, isNumeric, isLowercase, isUppercase,
-  isAscii, isFullWidth, isHalfWidth, isVariableWidth,
-  isMultibyte, isSurrogatePair,
-  isInt, isFloat, isDecimal, isHexadecimal, isDivisibleBy,
+  isAlpha,
+  isAlphanumeric,
+  isNumeric,
+  isLowercase,
+  isUppercase,
+  isAscii,
+  isFullWidth,
+  isHalfWidth,
+  isVariableWidth,
+  isMultibyte,
+  isSurrogatePair,
+  isInt,
+  isFloat,
+  isDecimal,
+  isHexadecimal,
+  isDivisibleBy,
   isHexColor,
   isMD5,
   isJSON,
   isEmpty,
-  isLength, isByteLength,
-  isUUID, isMongoId,
-  isDate, isAfter, isBefore,
+  isLength,
+  isByteLength,
+  isUUID,
+  isMongoId,
+  isAfter,
+  isBefore,
   isIn,
   isCreditCard,
-  isISIN, isISBN, isISSN,
+  isISIN,
+  isISBN,
+  isISSN,
   isMobilePhone,
   isCurrency,
   isISO8601,
-  isBase64, isDataURI,
-  ltrim, rtrim, trim,
-  escape, unescape, stripLow,
-  whitelist, blacklist,
+  isBase64,
+  isDataURI,
+  ltrim,
+  rtrim,
+  trim,
+  escape,
+  unescape,
+  stripLow,
+  whitelist,
+  blacklist,
   isWhitelisted,
   normalizeEmail,
   toString,
